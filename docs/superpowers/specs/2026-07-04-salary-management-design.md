@@ -201,15 +201,30 @@ Base path: `/api/v1`.
   effectiveDate, reason }` → appends a new `SalaryHistory` row
 
 ### Analytics (all normalize to USD via `CurrencyRate`)
-- `GET /analytics/summary` — headcount, total annualized payroll (USD),
-  overall median/p25/p75/min/max
+
+All four endpoints below read from one shared building block: a
+`latest_salary_usd` SQL CTE (`DISTINCT ON (employee_id) ... ORDER BY
+effective_date DESC`, joined to `CurrencyRate`, projecting
+`(base_salary + bonus) * rate_to_usd AS annual_usd` per active employee).
+This CTE is defined once in the analytics repository and reused by every
+query below — the analytical core is built and tested once, not
+re-derived per endpoint.
+
+**Total payroll (USD)** is defined as the sum of `annual_usd` across all
+active employees' latest salary rows (base + bonus, annualized — not
+summed across history, since the CTE selects exactly one row per
+employee).
+
+- `GET /analytics/summary` — headcount, total payroll (USD, as defined
+  above), overall median/p25/p75/min/max of `annual_usd`
 - `GET /analytics/distribution?groupBy=country|department|level` —
-  per-group headcount, median/p25/p75, total payroll
+  per-group headcount, median/p25/p75, total payroll, grouped from the
+  same CTE
 - `GET /analytics/histogram?bucketSize=10000` — salary-band buckets +
-  counts, for a histogram chart
-- `GET /analytics/equity?dimension=gender&within=level` — median salary by
-  `dimension` value, computed within each value of `within` (e.g. gender
-  gap, controlled for level), plus a headline gap %
+  counts over `annual_usd`, for a histogram chart
+- `GET /analytics/equity?dimension=gender&within=level` — median
+  `annual_usd` by `dimension` value, computed within each value of
+  `within` (e.g. gender gap, controlled for level), plus a headline gap %
 
 ## 7. Testing strategy — the pure/SQL seam
 
@@ -224,7 +239,10 @@ this with an explicit split:
 functions extracted into `services/`:
 - `computeGapPercent(medianA, medianB)`
 - `bucketSalary(amount, bucketSize)` (histogram bucketing)
-- `normalizeToUsd(amount, currency, rates)` (currency math, Decimal-safe)
+- `normalizeToUsd(amount, currency, rates)` (currency math, Decimal-safe) —
+  this covers **per-row display normalization only** (e.g. showing a
+  single employee's current salary in USD on the list/detail views). It
+  does **not** cover the analytics aggregation path — see below.
 - `parseListQuery(query)` → typed `{ page, pageSize, filters, sort }`
   (pagination/filter/sort parsing, including invalid-input handling)
 - Zod schemas for employee/salary payloads (valid + invalid cases)
@@ -232,21 +250,32 @@ functions extracted into `services/`:
 These are the bulk of the "unit tests" the assessment asks for, and they
 require no setup/teardown, so they run in CI in well under a second.
 
-**Integration tests (Vitest + Supertest, seeded test DB, transaction-per-test)**
+**Integration tests (Vitest + Supertest, seeded test DB, truncate-between-tests)**
 — cover what can't be meaningfully tested without Postgres:
-- The raw-SQL aggregation queries in the analytics repository (percentiles,
-  group-bys, currency-rate joins) — asserted against a small, known,
-  hand-seeded fixture (e.g. 12 employees with known salaries) where the
-  expected median/p25/p75 can be computed by hand and asserted exactly.
+- The `latest_salary_usd` CTE and all four analytics queries built on it
+  (percentiles, group-bys, the currency-rate join/normalization itself) —
+  asserted against a small, known, hand-seeded fixture (e.g. 12 employees
+  with known salaries across 2–3 currencies) where the expected
+  median/p25/p75/total-payroll can be computed by hand and asserted
+  exactly. This is where analytics currency normalization is actually
+  verified — it is a SQL-level concern, not the pure `normalizeToUsd`
+  function above.
 - Auth flow (login success/failure, JWT rejection)
 - Employee CRUD + salary-adjustment endpoints, including validation errors
   and 404s
 
-Each integration test runs inside a Postgres transaction that is rolled
-back on teardown (`BEGIN` in a `beforeEach`, `ROLLBACK` in `afterEach`) —
-no per-test container startup, no shared mutable state between tests, and
-no need to re-seed 10k rows for every test. A single test-DB container
-(started once for the whole suite via docker-compose) is enough.
+Each integration test file resets state via a `resetDb()` helper
+(`TRUNCATE ... RESTART IDENTITY CASCADE` on all tables) called in
+`beforeEach`, then inserts only the small fixture that test needs.
+Transaction-per-test-with-rollback was considered but rejected: Prisma
+Client has no way to make an arbitrary `prisma.employee.findMany()` call
+transparently join a transaction opened outside it, so that pattern would
+require threading a `PrismaClient | Prisma.TransactionClient` parameter
+through every repository function purely to support tests — added
+interface complexity not justified for a fixture this small. Truncate is
+simpler, keeps repository signatures clean, and is still fast (a dozen
+rows). A single test-DB container (started once for the whole suite via
+docker-compose) is enough; no per-test container startup.
 
 **Frontend tests (Vitest + React Testing Library)** — a focused set on the
 components with real logic: the analytics dashboard renders correct
