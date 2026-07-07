@@ -24,7 +24,8 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => expect(localStorage.getItem('salary_token')).toBe('jwt-token'));
-    expect(await screen.findByText(/welcome/i)).toBeInTheDocument();
+    // Landed in the authenticated shell (the header's sign-out control).
+    expect(await screen.findByRole('button', { name: /sign out/i })).toBeInTheDocument();
   });
 
   it('shows an error message on invalid credentials', async () => {

@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import EmployeesPage from './pages/EmployeesPage';
 import EmployeeDetailPage from './pages/EmployeeDetailPage';
 import EmployeeFormPage from './pages/EmployeeFormPage';
+import DashboardPage from './pages/DashboardPage';
 
 function AppShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -56,7 +57,7 @@ export default function App() {
           <ProtectedRoute>
             <AppShell>
               <Routes>
-                <Route index element={<div className="text-slate-600">Welcome</div>} />
+                <Route index element={<DashboardPage />} />
                 <Route path="employees" element={<EmployeesPage />} />
                 <Route path="employees/new" element={<EmployeeFormPage />} />
                 <Route path="employees/:id" element={<EmployeeDetailPage />} />
