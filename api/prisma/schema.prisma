@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(HR_MANAGER)
+  createdAt    DateTime @default(now())
+}
+
+enum Role {
+  HR_MANAGER
+}
+
+model Employee {
+  id             String         @id @default(uuid())
+  employeeNumber String         @unique
+  firstName      String
+  lastName       String
+  gender         Gender
+  country        String // ISO 3166-1 alpha-2
+  department     String
+  jobTitle       String
+  level          Level
+  localCurrency  String // ISO 4217, e.g. "USD", "INR"
+  hireDate       DateTime
+  status         EmployeeStatus @default(ACTIVE)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  salaryHistory SalaryHistory[]
+
+  @@index([country])
+  @@index([department])
+  @@index([level])
+  @@index([status])
+}
+
+enum Gender {
+  FEMALE
+  MALE
+  OTHER
+  UNDISCLOSED
+}
+
+enum Level {
+  L1_JUNIOR
+  L2_MID
+  L3_SENIOR
+  L4_STAFF
+  L5_PRINCIPAL
+  L6_MANAGER
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  TERMINATED
+}
+
+model SalaryHistory {
+  id            String   @id @default(uuid())
+  employeeId    String
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  baseSalary    Decimal  @db.Decimal(14, 2)
+  bonus         Decimal  @default(0) @db.Decimal(14, 2)
+  currency      String // ISO 4217, matches employee.localCurrency at time of entry
+  effectiveDate DateTime
+  reason        String // e.g. "Initial hire", "Annual raise", "Promotion", "Market adjustment"
+  changedBy     String // User.id of the HR manager who made the change
+  createdAt     DateTime @default(now())
+
+  @@index([employeeId, effectiveDate])
+}
+
+model CurrencyRate {
+  code      String   @id // ISO 4217, e.g. "INR"
+  rateToUsd Decimal  @db.Decimal(18, 8) // 1 unit of `code` = rateToUsd USD
+  updatedAt DateTime @updatedAt
+}
