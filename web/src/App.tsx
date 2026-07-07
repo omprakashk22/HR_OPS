@@ -4,6 +4,7 @@ import { useAuth } from './auth/AuthContext';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import EmployeesPage from './pages/EmployeesPage';
+import EmployeeDetailPage from './pages/EmployeeDetailPage';
 
 function AppShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -56,6 +57,7 @@ export default function App() {
               <Routes>
                 <Route index element={<div className="text-slate-600">Welcome</div>} />
                 <Route path="employees" element={<EmployeesPage />} />
+                <Route path="employees/:id" element={<EmployeeDetailPage />} />
               </Routes>
             </AppShell>
           </ProtectedRoute>
