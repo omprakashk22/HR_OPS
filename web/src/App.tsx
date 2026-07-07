@@ -3,6 +3,7 @@ import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
+import EmployeesPage from './pages/EmployeesPage';
 
 function AppShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -54,6 +55,7 @@ export default function App() {
             <AppShell>
               <Routes>
                 <Route index element={<div className="text-slate-600">Welcome</div>} />
+                <Route path="employees" element={<EmployeesPage />} />
               </Routes>
             </AppShell>
           </ProtectedRoute>
