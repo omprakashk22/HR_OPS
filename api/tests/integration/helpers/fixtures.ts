@@ -19,3 +19,34 @@ export async function loginAsHr(): Promise<string> {
     .send({ email: TEST_HR.email, password: TEST_HR.password });
   return res.body.token as string;
 }
+
+/** A small, known set of currency rates for USD-normalization assertions. */
+export async function seedCurrencies() {
+  await prisma.currencyRate.createMany({
+    data: [
+      { code: 'USD', rateToUsd: '1' },
+      { code: 'GBP', rateToUsd: '1.27' },
+      { code: 'INR', rateToUsd: '0.012' },
+    ],
+  });
+}
+
+/** A valid create-employee payload; override any field for a specific case. */
+export function employeePayload(overrides: Record<string, unknown> = {}) {
+  return {
+    firstName: 'Ada',
+    lastName: 'Lovelace',
+    gender: 'FEMALE',
+    country: 'GB',
+    department: 'Engineering',
+    jobTitle: 'Staff, Engineering',
+    level: 'L4_STAFF',
+    localCurrency: 'GBP',
+    hireDate: '2020-03-01',
+    baseSalary: '100000',
+    bonus: '0',
+    currency: 'GBP',
+    effectiveDate: '2020-03-01',
+    ...overrides,
+  };
+}
