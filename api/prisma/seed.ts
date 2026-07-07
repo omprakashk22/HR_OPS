@@ -149,6 +149,15 @@ async function main(): Promise<void> {
   await seedCurrencies();
   console.log('Seeding HR user…');
   const userId = await seedHrUser();
+
+  // Idempotent: safe to run on every container start. Employee numbers are
+  // unique, so re-generating would fail — skip if already populated.
+  const existing = await prisma.employee.count();
+  if (existing > 0) {
+    console.log(`Employees already present (${existing}); skipping generation.`);
+    return;
+  }
+
   console.log(`Seeding ${TOTAL_EMPLOYEES} employees…`);
   await seedEmployees(userId);
   const [employees, currencies, salaries] = await Promise.all([
