@@ -22,7 +22,7 @@ export function DistributionChart({ groups }: { groups: DistributionGroup[] }) {
         <XAxis dataKey="name" fontSize={12} />
         <YAxis fontSize={12} tickFormatter={(v) => `$${Math.round(v / 1000)}k`} />
         <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
-        <Bar dataKey="median" fill="#334155" name="Median USD" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="median" fill="#334155" name="Median USD" radius={[4, 4, 0, 0]} isAnimationActive={false} />
       </BarChart>
     </ResponsiveContainer>
   );

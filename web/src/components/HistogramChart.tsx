@@ -18,7 +18,7 @@ export function HistogramChart({ buckets }: { buckets: HistogramBucket[] }) {
         <XAxis dataKey="name" fontSize={11} interval={0} angle={-30} textAnchor="end" height={50} />
         <YAxis fontSize={12} />
         <Tooltip />
-        <Bar dataKey="count" fill="#0ea5e9" name="Employees" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="count" fill="#0ea5e9" name="Employees" radius={[4, 4, 0, 0]} isAnimationActive={false} />
       </BarChart>
     </ResponsiveContainer>
   );
