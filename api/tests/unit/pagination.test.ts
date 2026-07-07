@@ -37,6 +37,6 @@ describe('parseListQuery', () => {
   it('ignores blank and unknown filters', () => {
     const q = parseListQuery({ country: '   ', bogus: 'nope' });
     expect(q.country).toBeUndefined();
-    expect((q as Record<string, unknown>).bogus).toBeUndefined();
+    expect((q as unknown as Record<string, unknown>).bogus).toBeUndefined();
   });
 });
