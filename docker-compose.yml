@@ -19,5 +19,37 @@ services:
       timeout: 5s
       retries: 10
 
+  api:
+    build: ./api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://salary_app:salary_app_password@postgres:5432/salary_dev
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_EXPIRES_IN: 8h
+      PORT: 4000
+      NODE_ENV: production
+      # Seeds 10k employees on first boot; idempotent (skips if already populated).
+      SEED_ON_START: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_URL: /api/v1
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   postgres_data:
