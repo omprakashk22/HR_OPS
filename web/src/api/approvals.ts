@@ -55,6 +55,18 @@ export interface WorkflowInput {
   levels: Level[];
 }
 
+export interface UserOption {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
+
+export function listUsers(search?: string): Promise<{ data: UserOption[] }> {
+  const q = search ? `?search=${encodeURIComponent(search)}` : '';
+  return apiFetch(`/approvals/users${q}`);
+}
+
 export function listWorkflows(): Promise<{ data: Workflow[] }> {
   return apiFetch('/approvals/workflows');
 }

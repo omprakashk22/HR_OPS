@@ -56,10 +56,10 @@ describe('approval engine + API', () => {
   });
 
   describe('workflow config', () => {
-    it('creates a workflow (ADMIN) and rejects a second active one for the same entity (409)', async () => {
+    it('allows only one workflow per entity type (second → 409, even if inactive)', async () => {
       const adminToken = await loginAs('admin@test.local', 'pw');
       const body = {
-        name: 'WF', entityType: 'Widget', onReject: 'TERMINATE', isActive: true,
+        name: 'WF', entityType: 'Widget', onReject: 'TERMINATE', isActive: false,
         levels: [{ name: 'Manager', approverType: 'ROLE', approverRole: 'MANAGER' }],
       };
       const first = await request(app).post('/api/v1/approvals/workflows').set('Authorization', `Bearer ${adminToken}`).send(body);
@@ -67,6 +67,32 @@ describe('approval engine + API', () => {
 
       const second = await request(app).post('/api/v1/approvals/workflows').set('Authorization', `Bearer ${adminToken}`).send({ ...body, name: 'WF2' });
       expect(second.status).toBe(409);
+    });
+
+    it('deletes an unattached workflow but refuses one that has requests', async () => {
+      const adminToken = await loginAs('admin@test.local', 'pw');
+      // Unattached (different entity type, no requests) → deletable.
+      const unattached = await request(app)
+        .post('/api/v1/approvals/workflows')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Salary', entityType: 'SalaryChange', onReject: 'TERMINATE', isActive: false, levels: [{ name: 'M', approverType: 'ROLE', approverRole: 'MANAGER' }] });
+      const del = await request(app).delete(`/api/v1/approvals/workflows/${unattached.body.id}`).set('Authorization', `Bearer ${adminToken}`);
+      expect(del.status).toBe(204);
+
+      // Attached (has a request) → 409.
+      await createWidgetWorkflow('TERMINATE');
+      const wf = (await request(app).get('/api/v1/approvals/workflows').set('Authorization', `Bearer ${adminToken}`)).body.data.find((w: { entityType: string }) => w.entityType === 'Widget');
+      stubContext = { amountUsd: '1500.00' };
+      await approvalService.submitForApproval('Widget', 'wdel', submitterId);
+      const blocked = await request(app).delete(`/api/v1/approvals/workflows/${wf.id}`).set('Authorization', `Bearer ${adminToken}`);
+      expect(blocked.status).toBe(409);
+    });
+
+    it('lists users for the approver picker', async () => {
+      const adminToken = await loginAs('admin@test.local', 'pw');
+      const res = await request(app).get('/api/v1/approvals/users?search=finance').set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data.some((u: { email: string }) => u.email === 'finance@test.local')).toBe(true);
     });
 
     it('forbids workflow config for a non-admin/non-HR role (403)', async () => {

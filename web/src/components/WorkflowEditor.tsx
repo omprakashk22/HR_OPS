@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Workflow, Level, Condition, createWorkflow, updateWorkflow, replaceLevels } from '../api/approvals';
 import { ApiError } from '../api/client';
 import { ROLES, ENTITY_TYPES, CONDITION_OPS } from '../lib/constants';
+import { UserPicker } from './UserPicker';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -122,7 +123,11 @@ export function WorkflowEditor({
                     ))}
                   </Select>
                 ) : (
-                  <Input aria-label={`Level ${i + 1} approver`} placeholder="Approver email or user ID" value={l.approverUserId ?? ''} onChange={(e) => setLevel(i, { approverUserId: e.target.value })} />
+                  <UserPicker
+                    value={l.approverUserId}
+                    onChange={(id) => setLevel(i, { approverUserId: id })}
+                    ariaPrefix={`Level ${i + 1}`}
+                  />
                 )}
               </div>
               <label className="mt-2 flex items-center gap-2 text-xs text-slate-500">

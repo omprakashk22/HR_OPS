@@ -18,6 +18,9 @@ const canConfigure: RequestHandler = (req, res, next) => {
   res.status(403).json({ error: 'Forbidden' });
 };
 approvalRouter.use('/workflows', canConfigure);
+approvalRouter.use('/users', canConfigure);
+
+approvalRouter.get('/users', c.listUsers);
 
 approvalRouter.get('/workflows', c.listWorkflows);
 approvalRouter.get('/workflows/:id', c.getWorkflow);

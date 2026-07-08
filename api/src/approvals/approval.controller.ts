@@ -63,6 +63,15 @@ export const deleteWorkflow: RequestHandler = async (req, res, next) => {
   }
 };
 
+export const listUsers: RequestHandler = async (req, res, next) => {
+  try {
+    const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+    res.json({ data: await service.listUsers(search) });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ---- requests ----
 
 export const listRequests: RequestHandler = async (req, res, next) => {

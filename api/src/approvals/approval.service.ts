@@ -42,10 +42,14 @@ export async function getWorkflow(id: string) {
   return wf;
 }
 
-async function guardSingleActive(entityType: string, isActive: boolean, exceptId?: string) {
-  if (isActive && (await repo.hasOtherActiveWorkflow(entityType, exceptId))) {
-    throw new HttpError(409, `Another active workflow already exists for ${entityType}`);
+async function guardUniqueEntityType(entityType: string, exceptId?: string) {
+  if (await repo.hasWorkflowForEntityType(entityType, exceptId)) {
+    throw new HttpError(409, `A workflow already exists for ${entityType}`);
   }
+}
+
+export function listUsers(search?: string) {
+  return repo.listUsers(search);
 }
 
 /** Resolve each USER-level approver (email or id) to a real User.id. */
@@ -62,7 +66,7 @@ async function resolveLevelApprovers(levels: LevelInput[]): Promise<LevelInput[]
 }
 
 export async function createWorkflow(input: CreateWorkflowInput) {
-  await guardSingleActive(input.entityType, input.isActive);
+  await guardUniqueEntityType(input.entityType);
   return repo.createWorkflow({
     name: input.name,
     entityType: input.entityType,
@@ -73,8 +77,9 @@ export async function createWorkflow(input: CreateWorkflowInput) {
 }
 
 export async function updateWorkflow(id: string, patch: UpdateWorkflowInput) {
-  const wf = await getWorkflow(id);
-  if (patch.isActive === true) await guardSingleActive(wf.entityType, true, id);
+  await getWorkflow(id);
+  // entityType is immutable, and there is at most one workflow per type, so
+  // no cross-workflow guard is needed here — isActive just enables/disables it.
   return repo.updateWorkflowMeta(id, patch as Partial<{ name: string; onReject: RejectMode; isActive: boolean }>);
 }
 
@@ -85,6 +90,11 @@ export async function replaceLevels(id: string, levels: LevelInput[]) {
 
 export async function deleteWorkflow(id: string) {
   await getWorkflow(id);
+  // Only unattached workflows (no approval requests) may be deleted, so the
+  // audit trail of past decisions is never orphaned.
+  if ((await repo.countRequestsForWorkflow(id)) > 0) {
+    throw new HttpError(409, 'Cannot delete a workflow that has approval requests');
+  }
   await repo.deleteWorkflow(id);
 }
 

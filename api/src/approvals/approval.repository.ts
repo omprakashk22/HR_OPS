@@ -24,12 +24,34 @@ export function listWorkflows() {
   return prisma.approvalWorkflow.findMany({ include: workflowInclude, orderBy: { createdAt: 'desc' } });
 }
 
-/** True if another active workflow (not `exceptId`) already covers entityType. */
-export async function hasOtherActiveWorkflow(entityType: string, exceptId?: string): Promise<boolean> {
+/** True if any workflow (other than `exceptId`) already covers entityType. */
+export async function hasWorkflowForEntityType(entityType: string, exceptId?: string): Promise<boolean> {
   const count = await prisma.approvalWorkflow.count({
-    where: { entityType, isActive: true, ...(exceptId ? { id: { not: exceptId } } : {}) },
+    where: { entityType, ...(exceptId ? { id: { not: exceptId } } : {}) },
   });
   return count > 0;
+}
+
+/** Number of approval requests attached to a workflow (blocks deletion when > 0). */
+export function countRequestsForWorkflow(workflowId: string): Promise<number> {
+  return prisma.approvalRequest.count({ where: { workflowId } });
+}
+
+/** Users for the approver picker (id/email/name/role), optionally filtered. */
+export function listUsers(search?: string) {
+  return prisma.user.findMany({
+    where: search
+      ? {
+          OR: [
+            { email: { contains: search, mode: 'insensitive' } },
+            { name: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {},
+    select: { id: true, email: true, name: true, role: true },
+    orderBy: { email: 'asc' },
+    take: 50,
+  });
 }
 
 function levelCreateData(levels: LevelInput[]): Prisma.ApprovalLevelCreateManyWorkflowInput[] {
