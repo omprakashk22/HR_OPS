@@ -1,5 +1,6 @@
 import { RequestHandler } from 'express';
 import { verifyToken, TokenPayload } from '../auth/jwt';
+import { setActorUserId } from '../context/requestContext';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -19,6 +20,7 @@ export const requireAuth: RequestHandler = (req, res, next) => {
   }
   try {
     req.user = verifyToken(header.slice('Bearer '.length));
+    setActorUserId(req.user.sub);
     next();
   } catch {
     res.status(401).json({ error: 'Unauthorized' });

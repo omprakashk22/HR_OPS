@@ -10,6 +10,7 @@ import DashboardPage from './pages/DashboardPage';
 import ReimbursementsPage from './pages/ReimbursementsPage';
 import ApprovalsInboxPage from './pages/ApprovalsInboxPage';
 import WorkflowConfigPage from './pages/WorkflowConfigPage';
+import AuditLogPage from './pages/AuditLogPage';
 import { CONFIG_ROLES } from './lib/constants';
 
 function AppShell({ children }: { children: ReactNode }) {
@@ -39,6 +40,11 @@ function AppShell({ children }: { children: ReactNode }) {
               {user && CONFIG_ROLES.includes(user.role) && (
                 <Link to="/approvals/workflows" className="hover:text-slate-900">
                   Workflows
+                </Link>
+              )}
+              {user && user.role === 'ADMIN' && (
+                <Link to="/audit" className="hover:text-slate-900">
+                  Audit
                 </Link>
               )}
             </nav>
@@ -80,6 +86,7 @@ export default function App() {
                 <Route path="reimbursements" element={<ReimbursementsPage />} />
                 <Route path="approvals" element={<ApprovalsInboxPage />} />
                 <Route path="approvals/workflows" element={<WorkflowConfigPage />} />
+                <Route path="audit" element={<AuditLogPage />} />
               </Routes>
             </AppShell>
           </ProtectedRoute>

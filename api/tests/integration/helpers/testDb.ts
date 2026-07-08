@@ -10,6 +10,6 @@ export { prisma };
 
 export async function resetDb(): Promise<void> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE "ApprovalAction", "ApprovalRequest", "ApprovalLevel", "ApprovalWorkflow", "Reimbursement", "SalaryHistory", "Employee", "User", "CurrencyRate" RESTART IDENTITY CASCADE',
+    'TRUNCATE "AuditLog", "ApprovalAction", "ApprovalRequest", "ApprovalLevel", "ApprovalWorkflow", "Reimbursement", "SalaryHistory", "Employee", "User", "CurrencyRate" RESTART IDENTITY CASCADE',
   );
 }

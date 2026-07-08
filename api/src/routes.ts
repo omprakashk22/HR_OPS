@@ -4,6 +4,7 @@ import { employeeRouter } from './employees/employee.routes';
 import { analyticsRouter } from './analytics/analytics.routes';
 import { approvalRouter } from './approvals/approval.routes';
 import { reimbursementRouter } from './reimbursements/reimbursement.routes';
+import { auditRouter } from './audit/audit.routes';
 
 export const apiRouter = Router();
 
@@ -12,3 +13,4 @@ apiRouter.use('/employees', employeeRouter);
 apiRouter.use('/analytics', analyticsRouter);
 apiRouter.use('/approvals', approvalRouter);
 apiRouter.use('/reimbursements', reimbursementRouter);
+apiRouter.use('/audit', auditRouter);

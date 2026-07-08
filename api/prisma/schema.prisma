@@ -190,6 +190,31 @@ enum ReimbursementStatus {
   REJECTED
 }
 
+// ---------------------------------------------------------------------------
+// Generic audit log — one row per single-record create/update/delete, written
+// by a Prisma client extension. `actorUserId` is threaded via AsyncLocalStorage.
+// ---------------------------------------------------------------------------
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  model       String // the Prisma model name, e.g. "Employee"
+  recordId    String
+  action      AuditAction
+  actorUserId String? // null for system/seed writes
+  before      Json?
+  after       Json?
+  createdAt   DateTime    @default(now())
+
+  @@index([model, recordId])
+  @@index([createdAt])
+}
+
 model Reimbursement {
   id          String              @id @default(uuid())
   employeeId  String
