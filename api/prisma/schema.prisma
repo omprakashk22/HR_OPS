@@ -121,14 +121,15 @@ enum Decision {
 }
 
 model ApprovalWorkflow {
-  id         String          @id @default(uuid())
+  id         String            @id @default(uuid())
   name       String
   entityType String // e.g. "Reimbursement", "SalaryChange"
-  isActive   Boolean         @default(false)
-  onReject   RejectMode      @default(TERMINATE)
+  isActive   Boolean           @default(false)
+  onReject   RejectMode        @default(TERMINATE)
   levels     ApprovalLevel[]
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
+  requests   ApprovalRequest[]
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
 
   @@index([entityType, isActive]) // at most one active per entityType (service-enforced)
 }
@@ -150,6 +151,7 @@ model ApprovalLevel {
 model ApprovalRequest {
   id              String           @id @default(uuid())
   workflowId      String
+  workflow        ApprovalWorkflow @relation(fields: [workflowId], references: [id])
   entityType      String
   entityId        String
   context         Json // latest loaded snapshot (display + audit)

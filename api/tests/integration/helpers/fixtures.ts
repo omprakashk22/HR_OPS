@@ -1,4 +1,5 @@
 import request from 'supertest';
+import { Role } from '@prisma/client';
 import { prisma } from '../../../src/db/prisma';
 import { app } from '../../../src/app';
 import { hashPassword } from '../../../src/auth/password';
@@ -12,12 +13,21 @@ export async function seedHrUser(password: string = TEST_HR.password) {
   });
 }
 
+/** Create a user with a given role (password = 'pw'); returns the user row. */
+export async function seedUser(role: Role, email = `${role.toLowerCase()}@test.local`, employeeId?: string) {
+  const passwordHash = await hashPassword('pw');
+  return prisma.user.create({ data: { email, name: role, passwordHash, role, employeeId } });
+}
+
+/** Log in a user by email/password and return a bearer token. */
+export async function loginAs(email: string, password: string): Promise<string> {
+  const res = await request(app).post('/api/v1/auth/login').send({ email, password });
+  return res.body.token as string;
+}
+
 /** Log in the seeded HR user and return a bearer token for authed requests. */
 export async function loginAsHr(): Promise<string> {
-  const res = await request(app)
-    .post('/api/v1/auth/login')
-    .send({ email: TEST_HR.email, password: TEST_HR.password });
-  return res.body.token as string;
+  return loginAs(TEST_HR.email, TEST_HR.password);
 }
 
 /** A small, known set of currency rates for USD-normalization assertions. */
