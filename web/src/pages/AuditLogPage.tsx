@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { listAudit } from '../api/audit';
+import { listAudit, AuditEntry } from '../api/audit';
+import { AuditDiff } from '../components/AuditDiff';
 import { Card, CardContent } from '../components/ui/card';
 import { Table, THead, TBody, TR, TH, TD } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
 import { Select } from '../components/ui/select';
+import { Dialog } from '../components/ui/dialog';
 
 const MODELS = [
-  '',
   'Employee',
   'SalaryHistory',
   'Reimbursement',
@@ -24,8 +25,18 @@ const actionVariant: Record<string, 'default' | 'success' | 'muted'> = {
   DELETE: 'muted',
 };
 
+function actorLabel(a: AuditEntry): string {
+  if (a.actor) return a.actor.name || a.actor.email;
+  return a.actorUserId ? `${a.actorUserId.slice(0, 8)}…` : 'system';
+}
+
+function recordLabel(a: AuditEntry): string {
+  return a.label ?? `${a.recordId.slice(0, 8)}…`;
+}
+
 export default function AuditLogPage() {
   const [model, setModel] = useState('');
+  const [selected, setSelected] = useState<AuditEntry | null>(null);
   const { data } = useQuery({ queryKey: ['audit', model], queryFn: () => listAudit({ model: model || undefined }) });
   const rows = data?.data ?? [];
 
@@ -35,7 +46,7 @@ export default function AuditLogPage() {
         <h1 className="text-xl font-semibold">Audit log</h1>
         <Select aria-label="Filter by table" className="w-56" value={model} onChange={(e) => setModel(e.target.value)}>
           <option value="">All tables</option>
-          {MODELS.filter(Boolean).map((m) => (
+          {MODELS.map((m) => (
             <option key={m} value={m}>
               {m}
             </option>
@@ -64,14 +75,14 @@ export default function AuditLogPage() {
                 </TR>
               ) : (
                 rows.map((a) => (
-                  <TR key={a.id}>
+                  <TR key={a.id} className="cursor-pointer" onClick={() => setSelected(a)}>
                     <TD className="whitespace-nowrap">{new Date(a.createdAt).toLocaleString()}</TD>
                     <TD>{a.model}</TD>
-                    <TD className="font-mono text-xs">{a.recordId.slice(0, 8)}…</TD>
+                    <TD>{recordLabel(a)}</TD>
                     <TD>
                       <Badge variant={actionVariant[a.action] ?? 'default'}>{a.action}</Badge>
                     </TD>
-                    <TD className="font-mono text-xs">{a.actorUserId ? `${a.actorUserId.slice(0, 8)}…` : 'system'}</TD>
+                    <TD>{actorLabel(a)}</TD>
                   </TR>
                 ))
               )}
@@ -79,6 +90,22 @@ export default function AuditLogPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        wide
+        title={selected ? `${selected.model} · ${selected.action} · ${recordLabel(selected)}` : ''}
+      >
+        {selected && (
+          <>
+            <p className="mb-3 text-sm text-slate-500">
+              {new Date(selected.createdAt).toLocaleString()} by {actorLabel(selected)}
+            </p>
+            <AuditDiff entry={selected} />
+          </>
+        )}
+      </Dialog>
     </div>
   );
 }

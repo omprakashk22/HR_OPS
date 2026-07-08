@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { listWorkflows, Workflow } from '../api/approvals';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { listWorkflows, deleteWorkflow, Workflow } from '../api/approvals';
+import { ApiError } from '../api/client';
 import { WorkflowEditor } from '../components/WorkflowEditor';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -10,11 +11,21 @@ export default function WorkflowConfigPage() {
   const queryClient = useQueryClient();
   const { data } = useQuery({ queryKey: ['workflows'], queryFn: listWorkflows });
   const [editing, setEditing] = useState<Workflow | 'new' | null>(null);
+  const [error, setError] = useState('');
 
   const onSaved = () => {
     queryClient.invalidateQueries({ queryKey: ['workflows'] });
     setEditing(null);
   };
+
+  const del = useMutation({
+    mutationFn: (id: string) => deleteWorkflow(id),
+    onSuccess: () => {
+      setError('');
+      queryClient.invalidateQueries({ queryKey: ['workflows'] });
+    },
+    onError: (e) => setError(e instanceof ApiError ? e.message : 'Failed to delete workflow'),
+  });
 
   return (
     <div className="space-y-4">
@@ -22,6 +33,12 @@ export default function WorkflowConfigPage() {
         <h1 className="text-xl font-semibold">Approval workflows</h1>
         {!editing && <Button onClick={() => setEditing('new')}>New workflow</Button>}
       </div>
+
+      {error && (
+        <p role="alert" className="text-sm text-red-600">
+          {error}
+        </p>
+      )}
 
       {editing ? (
         <Card>
@@ -39,17 +56,27 @@ export default function WorkflowConfigPage() {
             <p className="text-slate-400">No workflows yet.</p>
           ) : (
             data!.data.map((wf) => (
-              <button
+              <div
                 key={wf.id}
-                onClick={() => setEditing(wf)}
-                className="flex w-full items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-left text-sm hover:bg-slate-50"
+                className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm"
               >
-                <span>
+                <button onClick={() => setEditing(wf)} className="flex-1 text-left hover:underline">
                   <span className="font-medium">{wf.name}</span>
                   <span className="text-slate-500"> · {wf.entityType} · {wf.levels.length} level(s)</span>
-                </span>
-                <Badge variant={wf.isActive ? 'success' : 'muted'}>{wf.isActive ? 'active' : 'inactive'}</Badge>
-              </button>
+                </button>
+                <div className="flex items-center gap-3">
+                  <Badge variant={wf.isActive ? 'success' : 'muted'}>{wf.isActive ? 'active' : 'inactive'}</Badge>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => {
+                      if (window.confirm(`Delete workflow "${wf.name}"?`)) del.mutate(wf.id);
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
             ))
           )}
         </div>

@@ -82,6 +82,9 @@ export function updateWorkflow(id: string, patch: Partial<Pick<WorkflowInput, 'n
 export function replaceLevels(id: string, levels: Level[]): Promise<Workflow> {
   return apiFetch(`/approvals/workflows/${id}/levels`, { method: 'PUT', body: JSON.stringify({ levels }) });
 }
+export function deleteWorkflow(id: string): Promise<void> {
+  return apiFetch(`/approvals/workflows/${id}`, { method: 'DELETE' });
+}
 
 export function listRequests(box: 'inbox' | 'mine'): Promise<{ data: ApprovalRequest[] }> {
   return apiFetch(`/approvals/requests?box=${box}`);

@@ -1,11 +1,19 @@
 import { apiFetch } from './client';
 
+export interface AuditActor {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface AuditEntry {
   id: string;
   model: string;
   recordId: string;
   action: 'CREATE' | 'UPDATE' | 'DELETE';
   actorUserId: string | null;
+  actor: AuditActor | null;
+  label: string | null;
   before: Record<string, unknown> | null;
   after: Record<string, unknown> | null;
   createdAt: string;

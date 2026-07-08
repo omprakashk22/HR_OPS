@@ -59,6 +59,8 @@ describe('audit log', () => {
     );
     expect(entry).toBeTruthy();
     expect(entry.actorUserId).toBe(hrUserId); // attributed to the acting HR user
+    expect(entry.actor.email).toBe('hr@test.local'); // resolved to a meaningful actor
+    expect(entry.label).toContain('E00001'); // human record label from the snapshot
     expect(entry.after.department).toBe('Product');
     expect(entry.before.department).toBe('Engineering');
   });

@@ -5,10 +5,11 @@ interface DialogProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  wide?: boolean;
 }
 
 /** Lightweight modal — no external dependency; closes on backdrop click / Esc. */
-export function Dialog({ open, onClose, title, children }: DialogProps) {
+export function Dialog({ open, onClose, title, children, wide = false }: DialogProps) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -27,7 +28,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
       role="presentation"
     >
       <div
-        className="w-full max-w-md rounded-lg bg-white shadow-xl"
+        className={`w-full rounded-lg bg-white shadow-xl ${wide ? 'max-w-2xl' : 'max-w-md'}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}

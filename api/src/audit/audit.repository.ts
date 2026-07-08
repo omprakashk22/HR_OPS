@@ -20,3 +20,7 @@ export function listAuditLogs(opts: { model?: string; recordId?: string; take: n
 export function countAuditLogs(opts: { model?: string; recordId?: string }) {
   return prisma.auditLog.count({ where: buildWhere(opts) });
 }
+
+export function findUsersByIds(ids: string[]) {
+  return prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, email: true } });
+}
