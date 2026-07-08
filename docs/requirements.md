@@ -38,6 +38,21 @@ HR Manager (single persona, single role, for this version).
   different tax/benefit rules. Modeling this accurately requires
   country-specific compliance expertise this assessment doesn't call for,
   and it doesn't change the core salary-data/analytics problem.
+- **Monthly payslip generation** — a payslip is payroll *output*: it needs a
+  gross→net calculation (statutory tax, deductions, benefits) that differs
+  per country, i.e. the tax & benefits administration excluded above. This
+  system stores compensation *decisions* (annual base + bonus + history),
+  not monthly net pay, so payslips sit one layer below its purpose.
+- **Attendance / time tracking and attendance-based pay** — salaries here
+  are annual compensation records, not hourly or attendance-derived monthly
+  pay. Supporting this would mean a different data model (timesheets, leave,
+  pay periods) and a second persona (employees logging time) — a
+  time-and-attendance payroll engine, which is a separate product from
+  managing salary data and answering pay-equity questions.
+- **Expense reimbursements** — expense management is its own domain (claims,
+  receipts, an approval workflow, a finance persona). It is adjacent to HR
+  but orthogonal to *salary* management, and shares none of this system's
+  data model or the single HR-Manager persona.
 - **Approval workflows** (e.g. manager sign-off before a raise takes
   effect) — valuable in a real org, but introduces a second persona (the
   approver) and a state machine the stated single-persona problem doesn't
