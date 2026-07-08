@@ -95,3 +95,37 @@ export const HR_USER = {
   name: 'ACME HR Manager',
   password: 'password123', // dev-only seeded credential
 };
+
+// Approver/submitter user accounts (all password123). `linkEmployeeNumber`
+// ties a User to an Employee row so the employee-files-own path is demoable.
+export interface ApprovalUser {
+  email: string;
+  name: string;
+  role: 'EMPLOYEE' | 'MANAGER' | 'FINANCE' | 'ADMIN';
+  linkEmployeeNumber?: string;
+}
+
+export const APPROVAL_USERS: ApprovalUser[] = [
+  { email: 'admin@acme.test', name: 'ACME Admin', role: 'ADMIN' },
+  { email: 'manager@acme.test', name: 'Approving Manager', role: 'MANAGER', linkEmployeeNumber: 'E00002' },
+  { email: 'finance@acme.test', name: 'Finance Reviewer', role: 'FINANCE' },
+  { email: 'employee@acme.test', name: 'Sample Employee', role: 'EMPLOYEE', linkEmployeeNumber: 'E00001' },
+];
+
+// A sample active workflow so every approvals UI surface is non-empty.
+// L1 Manager (always), L2 Finance only when amountUsd > 1000 (normalized).
+export const SAMPLE_WORKFLOW = {
+  name: 'Reimbursement approval',
+  entityType: 'Reimbursement',
+  onReject: 'TERMINATE' as const,
+  levels: [
+    { sequence: 1, name: 'Manager', approverType: 'ROLE' as const, approverRole: 'MANAGER' as const, condition: null },
+    {
+      sequence: 2,
+      name: 'Finance',
+      approverType: 'ROLE' as const,
+      approverRole: 'FINANCE' as const,
+      condition: { field: 'amountUsd', op: 'gt', value: 1000 },
+    },
+  ],
+};

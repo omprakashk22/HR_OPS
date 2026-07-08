@@ -11,6 +11,8 @@ import {
   SALARY_REASONS,
   TOTAL_EMPLOYEES,
   HR_USER,
+  APPROVAL_USERS,
+  SAMPLE_WORKFLOW,
 } from './seedData';
 
 const prisma = new PrismaClient();
@@ -57,6 +59,61 @@ async function seedHrUser(): Promise<string> {
     create: { email: HR_USER.email, name: HR_USER.name, passwordHash, role: 'HR_MANAGER' },
   });
   return user.id;
+}
+
+/** Idempotent: upsert the approver/submitter user accounts (pre-guard). */
+async function seedApprovalUsers(): Promise<void> {
+  const passwordHash = await bcrypt.hash(HR_USER.password, 10);
+  for (const u of APPROVAL_USERS) {
+    await prisma.user.upsert({
+      where: { email: u.email },
+      update: { name: u.name, role: u.role, passwordHash },
+      create: { email: u.email, name: u.name, role: u.role, passwordHash },
+    });
+  }
+}
+
+/** Idempotent: ensure one active sample Reimbursement workflow exists. */
+async function seedSampleWorkflow(): Promise<void> {
+  const existing = await prisma.approvalWorkflow.findFirst({
+    where: { name: SAMPLE_WORKFLOW.name },
+  });
+  const workflow =
+    existing ??
+    (await prisma.approvalWorkflow.create({
+      data: {
+        name: SAMPLE_WORKFLOW.name,
+        entityType: SAMPLE_WORKFLOW.entityType,
+        onReject: SAMPLE_WORKFLOW.onReject,
+        isActive: true,
+      },
+    }));
+  // Reset levels to the canonical definition (idempotent).
+  await prisma.approvalLevel.deleteMany({ where: { workflowId: workflow.id } });
+  await prisma.approvalLevel.createMany({
+    data: SAMPLE_WORKFLOW.levels.map((l) => ({
+      workflowId: workflow.id,
+      sequence: l.sequence,
+      name: l.name,
+      approverType: l.approverType,
+      approverRole: l.approverRole,
+      condition: l.condition ?? Prisma.JsonNull,
+    })),
+  });
+}
+
+/** Idempotent: link seeded users to Employee rows (after employees exist). */
+async function linkUsersToEmployees(): Promise<void> {
+  for (const u of APPROVAL_USERS) {
+    if (!u.linkEmployeeNumber) continue;
+    const employee = await prisma.employee.findUnique({
+      where: { employeeNumber: u.linkEmployeeNumber },
+      select: { id: true },
+    });
+    if (employee) {
+      await prisma.user.update({ where: { email: u.email }, data: { employeeId: employee.id } });
+    }
+  }
 }
 
 async function seedEmployees(changedBy: string): Promise<void> {
@@ -149,17 +206,22 @@ async function main(): Promise<void> {
   await seedCurrencies();
   console.log('Seeding HR user…');
   const userId = await seedHrUser();
+  console.log('Seeding approver users + sample workflow…');
+  await seedApprovalUsers();
+  await seedSampleWorkflow();
 
   // Idempotent: safe to run on every container start. Employee numbers are
   // unique, so re-generating would fail — skip if already populated.
   const existing = await prisma.employee.count();
   if (existing > 0) {
     console.log(`Employees already present (${existing}); skipping generation.`);
+    await linkUsersToEmployees(); // employees already exist — link now
     return;
   }
 
   console.log(`Seeding ${TOTAL_EMPLOYEES} employees…`);
   await seedEmployees(userId);
+  await linkUsersToEmployees();
   const [employees, currencies, salaries] = await Promise.all([
     prisma.employee.count(),
     prisma.currencyRate.count(),
