@@ -2,6 +2,10 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import { apiRouter } from './routes';
 import { errorHandler } from './middleware/errorHandler';
+import { registerApprovalTargets } from './approvals/registerTargets';
+
+// Wire approval consumers (e.g. Reimbursement) into the engine at startup.
+registerApprovalTargets();
 
 export const app: Express = express();
 
