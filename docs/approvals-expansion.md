@@ -36,6 +36,16 @@ attendance → monthly pay-run/payslips**.
 - **UI**: an approvals inbox (Awaiting-me / Submitted-by-me + approve / reject /
   resubmit), a workflow config editor (ordered levels + conditions), and a
   reimbursements page.
+- **One workflow per entity type** (enforced), a **searchable user dropdown**
+  for USER-level approvers (accepts email or id; resolved to a user id
+  server-side), and **guarded deletion** (a workflow with approval requests
+  can't be deleted).
+- **Generic audit log**: a Prisma client extension records every single-record
+  create/update/delete across **all tables** into an `AuditLog` (model,
+  record, action, before/after, `actorUserId`), attributing the change to the
+  acting user via `AsyncLocalStorage`; password hashes are redacted. Viewable
+  on an **ADMIN-only Audit page** (filter by table). Bulk seed inserts and
+  writes inside interactive transactions are not captured (documented limit).
 
 ## Demo (with the stack running via `docker compose up --build`)
 
