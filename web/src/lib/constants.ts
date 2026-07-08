@@ -30,3 +30,22 @@ export const DEPARTMENTS = [
 ];
 
 export const CURRENCIES = ['USD', 'INR', 'GBP', 'EUR', 'CAD', 'AUD', 'SGD', 'BRL'];
+
+export const ROLES = ['EMPLOYEE', 'MANAGER', 'FINANCE', 'HR_MANAGER', 'ADMIN'];
+
+export const CONDITION_OPS = [
+  { value: 'gt', label: '>' },
+  { value: 'gte', label: '≥' },
+  { value: 'lt', label: '<' },
+  { value: 'lte', label: '≤' },
+  { value: 'eq', label: '=' },
+  { value: 'ne', label: '≠' },
+];
+
+export const REIMBURSEMENT_CATEGORIES = ['Travel', 'Meals', 'Equipment', 'Other'];
+
+// Entity types a workflow can be attached to (drives the config dropdown).
+export const ENTITY_TYPES = ['Reimbursement', 'SalaryChange'];
+
+// Roles allowed to configure workflows.
+export const CONFIG_ROLES = ['ADMIN', 'HR_MANAGER'];
