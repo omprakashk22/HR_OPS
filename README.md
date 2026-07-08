@@ -71,24 +71,41 @@ npm run dev
 
 ## Running tests
 
-```bash
-# API — 50 tests (unit + integration). Needs Postgres up (test DB).
-cd api
-npx prisma migrate deploy      # once, to create the test schema
-DATABASE_URL="postgresql://salary_app:salary_app_password@localhost:5433/salary_test" \
-  npx prisma migrate deploy
-npm test
+**68 tests total: 47 with no database (29 API + 18 web) + 21 API integration.**
 
-# Web — 18 tests (React Testing Library). No services required.
-cd web
+### Unit tests — no database required (fast & deterministic)
+
+```bash
+# API: 29 pure tests (health, currency, stats, pagination, auth, validation)
+cd api
+cp .env.example .env      # config values only — unit tests make no DB connection
+npm install
+npm run test:unit
+
+# Web: 18 React Testing Library tests
+cd ../web
+cp .env.example .env
+npm install
 npm test
 ```
 
-Unit tests (currency/stats/pagination/validation) are pure and run in
-milliseconds; integration tests reset the test DB with `TRUNCATE` between
-cases and assert analytics medians/percentiles against a hand-computed
-fixture. See [`docs/ai-workflow.md`](docs/ai-workflow.md) for the testing
-philosophy.
+### Integration tests — require Postgres
+
+```bash
+docker compose up -d postgres     # starts Postgres with salary_dev + salary_test
+cd api                            # (.env already copied above; npm install done)
+# apply the schema to the TEST database:
+DATABASE_URL="postgresql://salary_app:salary_app_password@localhost:5433/salary_test" \
+  npx prisma migrate deploy
+npm run test:integration          # 22 tests: auth, employee CRUD, analytics
+
+npm test                          # or run all 50 API tests together
+```
+
+Unit tests are pure and run in milliseconds. Integration tests reset the test
+DB with `TRUNCATE` between cases and assert analytics medians/percentiles
+against a hand-computed fixture. See [`docs/ai-workflow.md`](docs/ai-workflow.md)
+for the testing philosophy.
 
 ## Project structure
 

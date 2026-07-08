@@ -12,6 +12,8 @@
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.check.json",
     "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
