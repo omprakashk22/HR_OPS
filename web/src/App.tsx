@@ -8,6 +8,7 @@ import EmployeeDetailPage from './pages/EmployeeDetailPage';
 import EmployeeFormPage from './pages/EmployeeFormPage';
 import DashboardPage from './pages/DashboardPage';
 import ReimbursementsPage from './pages/ReimbursementsPage';
+import ApprovalsInboxPage from './pages/ApprovalsInboxPage';
 
 function AppShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -29,6 +30,9 @@ function AppShell({ children }: { children: ReactNode }) {
               </Link>
               <Link to="/reimbursements" className="hover:text-slate-900">
                 Reimbursements
+              </Link>
+              <Link to="/approvals" className="hover:text-slate-900">
+                Approvals
               </Link>
             </nav>
           </div>
@@ -67,6 +71,7 @@ export default function App() {
                 <Route path="employees/:id" element={<EmployeeDetailPage />} />
                 <Route path="employees/:id/edit" element={<EmployeeFormPage />} />
                 <Route path="reimbursements" element={<ReimbursementsPage />} />
+                <Route path="approvals" element={<ApprovalsInboxPage />} />
               </Routes>
             </AppShell>
           </ProtectedRoute>
