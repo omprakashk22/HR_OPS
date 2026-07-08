@@ -75,6 +75,32 @@ describe('approval engine + API', () => {
         .set('Authorization', `Bearer ${managerToken}`);
       expect(res.status).toBe(403);
     });
+
+    it('resolves a USER-level approver given by email to the user id', async () => {
+      const adminToken = await loginAs('admin@test.local', 'pw');
+      const res = await request(app)
+        .post('/api/v1/approvals/workflows')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'ByEmail', entityType: 'Widget', onReject: 'TERMINATE', isActive: false,
+          levels: [{ name: 'Finance person', approverType: 'USER', approverUserId: 'finance@test.local' }],
+        });
+      expect(res.status).toBe(201);
+      const finance = await prisma.user.findUnique({ where: { email: 'finance@test.local' } });
+      expect(res.body.levels[0].approverUserId).toBe(finance!.id); // email → id
+    });
+
+    it('rejects an unknown approver email with 400', async () => {
+      const adminToken = await loginAs('admin@test.local', 'pw');
+      const res = await request(app)
+        .post('/api/v1/approvals/workflows')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'BadUser', entityType: 'Widget', onReject: 'TERMINATE', isActive: false,
+          levels: [{ name: 'Ghost', approverType: 'USER', approverUserId: 'ghost@nowhere.test' }],
+        });
+      expect(res.status).toBe(400);
+    });
   });
 
   describe('request lifecycle', () => {

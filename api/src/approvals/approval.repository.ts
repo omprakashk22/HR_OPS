@@ -4,6 +4,11 @@ import { LevelInput } from './approval.schemas';
 
 const workflowInclude = { levels: { orderBy: { sequence: 'asc' as const } } };
 
+/** Resolve a USER-level approver reference (email or user id) to a User. */
+export function findUserByIdOrEmail(value: string) {
+  return prisma.user.findFirst({ where: { OR: [{ id: value }, { email: value }] } });
+}
+
 export function findActiveWorkflow(entityType: string) {
   return prisma.approvalWorkflow.findFirst({
     where: { entityType, isActive: true },

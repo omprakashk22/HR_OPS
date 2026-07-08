@@ -122,7 +122,7 @@ export function WorkflowEditor({
                     ))}
                   </Select>
                 ) : (
-                  <Input aria-label={`Level ${i + 1} user id`} placeholder="User ID" value={l.approverUserId ?? ''} onChange={(e) => setLevel(i, { approverUserId: e.target.value })} />
+                  <Input aria-label={`Level ${i + 1} approver`} placeholder="Approver email or user ID" value={l.approverUserId ?? ''} onChange={(e) => setLevel(i, { approverUserId: e.target.value })} />
                 )}
               </div>
               <label className="mt-2 flex items-center gap-2 text-xs text-slate-500">

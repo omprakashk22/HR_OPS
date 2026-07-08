@@ -48,6 +48,19 @@ async function guardSingleActive(entityType: string, isActive: boolean, exceptId
   }
 }
 
+/** Resolve each USER-level approver (email or id) to a real User.id. */
+async function resolveLevelApprovers(levels: LevelInput[]): Promise<LevelInput[]> {
+  return Promise.all(
+    levels.map(async (l) => {
+      if (l.approverType !== 'USER') return l;
+      const ref = l.approverUserId ?? '';
+      const user = await repo.findUserByIdOrEmail(ref);
+      if (!user) throw new HttpError(400, `Unknown approver user: ${ref}`);
+      return { ...l, approverUserId: user.id };
+    }),
+  );
+}
+
 export async function createWorkflow(input: CreateWorkflowInput) {
   await guardSingleActive(input.entityType, input.isActive);
   return repo.createWorkflow({
@@ -55,7 +68,7 @@ export async function createWorkflow(input: CreateWorkflowInput) {
     entityType: input.entityType,
     onReject: input.onReject as RejectMode,
     isActive: input.isActive,
-    levels: input.levels,
+    levels: await resolveLevelApprovers(input.levels),
   });
 }
 
@@ -67,7 +80,7 @@ export async function updateWorkflow(id: string, patch: UpdateWorkflowInput) {
 
 export async function replaceLevels(id: string, levels: LevelInput[]) {
   await getWorkflow(id);
-  return repo.replaceLevels(id, levels);
+  return repo.replaceLevels(id, await resolveLevelApprovers(levels));
 }
 
 export async function deleteWorkflow(id: string) {

@@ -16,7 +16,9 @@ export const levelInputSchema = z
     name: z.string().min(1),
     approverType: z.enum(['ROLE', 'USER']),
     approverRole: z.enum(ROLE_VALUES).nullish(),
-    approverUserId: z.string().uuid().nullish(),
+    // Accept an email OR a user id here; the service resolves it to a real
+    // User.id (the engine compares against User.id at decision time).
+    approverUserId: z.string().min(1).nullish(),
     condition: conditionSchema.optional(),
   })
   .refine((l) => (l.approverType === 'ROLE' ? !!l.approverRole : !!l.approverUserId), {
